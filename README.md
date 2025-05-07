@@ -1,4 +1,4 @@
-👉 [See Practical Use Cases for Athena →](./POTENTIAL_APPLICATIONS.md)
+src/potential applications.md
 # athena-reflective-agent
 Athena Reflective Agent – Version 2 Architecture
 
