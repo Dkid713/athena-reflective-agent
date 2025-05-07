@@ -1,4 +1,3 @@
-src/potential applications.md
 # athena-reflective-agent
 Athena Reflective Agent – Version 2 Architecture
 
