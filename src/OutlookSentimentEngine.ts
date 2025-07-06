@@ -46,56 +46,232 @@ export class OutlookSentimentEngine {
   }
 
   private async fetchSentimentData(source: string): Promise<SentimentData[]> {
-    // Simulate sentiment data - in production, integrate with actual APIs
-    const simulatedData: SentimentData[] = [];
+    const sentimentData: SentimentData[] = [];
     
-    switch (source) {
-      case 'market_outlook':
-        simulatedData.push({
-          source: 'Market Outlook',
-          text: 'Analysts remain optimistic about Q1 tech earnings despite recent volatility',
-          sentiment: 0.65,
-          confidence: 0.8,
-          timestamp: new Date(),
-          topics: ['earnings', 'technology', 'market']
-        });
-        break;
-        
-      case 'tech_sentiment':
-        simulatedData.push({
-          source: 'Tech Sentiment',
-          text: 'AI adoption accelerating across enterprise sectors with positive reception',
-          sentiment: 0.75,
-          confidence: 0.85,
-          timestamp: new Date(),
-          topics: ['AI', 'enterprise', 'adoption']
-        });
-        break;
-        
-      case 'economic_indicators':
-        simulatedData.push({
-          source: 'Economic Indicators',
-          text: 'Mixed signals from latest economic data suggest cautious optimism',
-          sentiment: 0.55,
-          confidence: 0.7,
-          timestamp: new Date(),
-          topics: ['economy', 'indicators', 'growth']
-        });
-        break;
-        
-      case 'social_media_trends':
-        simulatedData.push({
-          source: 'Social Media Trends',
-          text: 'Public enthusiasm for new AI applications continues to grow',
-          sentiment: 0.8,
-          confidence: 0.75,
-          timestamp: new Date(),
-          topics: ['AI', 'public', 'enthusiasm']
-        });
-        break;
+    try {
+      switch (source) {
+        case 'market_outlook':
+          await this.fetchMarketSentiment(sentimentData);
+          break;
+          
+        case 'tech_sentiment':
+          await this.fetchTechSentiment(sentimentData);
+          break;
+          
+        case 'economic_indicators':
+          await this.fetchEconomicSentiment(sentimentData);
+          break;
+          
+        case 'social_media_trends':
+          await this.fetchSocialMediaSentiment(sentimentData);
+          break;
+      }
+    } catch (error) {
+      console.error(`❌ [SENTIMENT] Error fetching ${source}:`, error);
     }
     
-    return simulatedData;
+    return sentimentData;
+  }
+
+  private async fetchMarketSentiment(sentimentData: SentimentData[]): Promise<void> {
+    try {
+      // Fetch recent financial news for sentiment analysis
+      const newsUrl = 'https://news.google.com/rss/search?q=stock+market+outlook+earnings&hl=en&gl=US&ceid=US:en';
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsUrl)}`;
+      
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      const xmlText = data.contents;
+      
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      const items = xmlDoc.getElementsByTagName('item');
+      
+      if (items.length > 0) {
+        const item = items[0]; // Take the most recent article
+        const title = item.getElementsByTagName('title')[0]?.textContent || '';
+        const description = item.getElementsByTagName('description')[0]?.textContent || '';
+        const content = (title + ' ' + description.replace(/<[^>]*>/g, '')).trim();
+        
+        const sentiment = this.analyzeSentimentScore(content);
+        
+        sentimentData.push({
+          source: 'Market Outlook',
+          text: content.substring(0, 200) + '...',
+          sentiment: sentiment,
+          confidence: 0.8,
+          timestamp: new Date(),
+          topics: this.extractTopics(content, ['earnings', 'market', 'stocks', 'outlook'])
+        });
+      }
+    } catch (error) {
+      // Fallback with neutral sentiment
+      sentimentData.push({
+        source: 'Market Outlook',
+        text: 'Market sentiment data temporarily unavailable',
+        sentiment: 0.5,
+        confidence: 0.5,
+        timestamp: new Date(),
+        topics: ['market']
+      });
+    }
+  }
+
+  private async fetchTechSentiment(sentimentData: SentimentData[]): Promise<void> {
+    try {
+      // Fetch tech news for sentiment analysis
+      const newsUrl = 'https://news.google.com/rss/search?q=artificial+intelligence+technology+adoption&hl=en&gl=US&ceid=US:en';
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsUrl)}`;
+      
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      const xmlText = data.contents;
+      
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      const items = xmlDoc.getElementsByTagName('item');
+      
+      if (items.length > 0) {
+        const item = items[0];
+        const title = item.getElementsByTagName('title')[0]?.textContent || '';
+        const description = item.getElementsByTagName('description')[0]?.textContent || '';
+        const content = (title + ' ' + description.replace(/<[^>]*>/g, '')).trim();
+        
+        const sentiment = this.analyzeSentimentScore(content);
+        
+        sentimentData.push({
+          source: 'Tech Sentiment',
+          text: content.substring(0, 200) + '...',
+          sentiment: sentiment,
+          confidence: 0.85,
+          timestamp: new Date(),
+          topics: this.extractTopics(content, ['AI', 'technology', 'innovation', 'adoption'])
+        });
+      }
+    } catch (error) {
+      sentimentData.push({
+        source: 'Tech Sentiment',
+        text: 'Technology sentiment data temporarily unavailable',
+        sentiment: 0.6,
+        confidence: 0.5,
+        timestamp: new Date(),
+        topics: ['technology']
+      });
+    }
+  }
+
+  private async fetchEconomicSentiment(sentimentData: SentimentData[]): Promise<void> {
+    try {
+      // Fetch economic news for sentiment analysis
+      const newsUrl = 'https://news.google.com/rss/search?q=economic+indicators+GDP+inflation&hl=en&gl=US&ceid=US:en';
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsUrl)}`;
+      
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      const xmlText = data.contents;
+      
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      const items = xmlDoc.getElementsByTagName('item');
+      
+      if (items.length > 0) {
+        const item = items[0];
+        const title = item.getElementsByTagName('title')[0]?.textContent || '';
+        const description = item.getElementsByTagName('description')[0]?.textContent || '';
+        const content = (title + ' ' + description.replace(/<[^>]*>/g, '')).trim();
+        
+        const sentiment = this.analyzeSentimentScore(content);
+        
+        sentimentData.push({
+          source: 'Economic Indicators',
+          text: content.substring(0, 200) + '...',
+          sentiment: sentiment,
+          confidence: 0.7,
+          timestamp: new Date(),
+          topics: this.extractTopics(content, ['economy', 'GDP', 'inflation', 'growth'])
+        });
+      }
+    } catch (error) {
+      sentimentData.push({
+        source: 'Economic Indicators',
+        text: 'Economic sentiment data temporarily unavailable',
+        sentiment: 0.5,
+        confidence: 0.5,
+        timestamp: new Date(),
+        topics: ['economy']
+      });
+    }
+  }
+
+  private async fetchSocialMediaSentiment(sentimentData: SentimentData[]): Promise<void> {
+    // Social media sentiment would typically require API keys for Twitter, Reddit, etc.
+    // For now, we'll use tech news as a proxy for public sentiment
+    try {
+      const newsUrl = 'https://news.google.com/rss/search?q=public+opinion+AI+technology&hl=en&gl=US&ceid=US:en';
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsUrl)}`;
+      
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      const xmlText = data.contents;
+      
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      const items = xmlDoc.getElementsByTagName('item');
+      
+      if (items.length > 0) {
+        const item = items[0];
+        const title = item.getElementsByTagName('title')[0]?.textContent || '';
+        const description = item.getElementsByTagName('description')[0]?.textContent || '';
+        const content = (title + ' ' + description.replace(/<[^>]*>/g, '')).trim();
+        
+        const sentiment = this.analyzeSentimentScore(content);
+        
+        sentimentData.push({
+          source: 'Social Media Trends',
+          text: content.substring(0, 200) + '...',
+          sentiment: sentiment,
+          confidence: 0.75,
+          timestamp: new Date(),
+          topics: this.extractTopics(content, ['public', 'opinion', 'social', 'trends'])
+        });
+      }
+    } catch (error) {
+      sentimentData.push({
+        source: 'Social Media Trends',
+        text: 'Social media sentiment data temporarily unavailable',
+        sentiment: 0.6,
+        confidence: 0.5,
+        timestamp: new Date(),
+        topics: ['social']
+      });
+    }
+  }
+
+  private analyzeSentimentScore(text: string): number {
+    const positiveWords = ['positive', 'good', 'great', 'excellent', 'success', 'growth', 'gain', 'rise', 'improve', 'strong', 'bullish', 'optimistic'];
+    const negativeWords = ['negative', 'bad', 'poor', 'decline', 'fall', 'drop', 'weak', 'bearish', 'pessimistic', 'concern', 'risk', 'crisis'];
+    
+    const textLower = text.toLowerCase();
+    let score = 0.5; // neutral baseline
+    
+    positiveWords.forEach(word => {
+      const matches = (textLower.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length;
+      score += matches * 0.05;
+    });
+    
+    negativeWords.forEach(word => {
+      const matches = (textLower.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length;
+      score -= matches * 0.05;
+    });
+    
+    return Math.max(0, Math.min(1, score));
+  }
+
+  private extractTopics(text: string, possibleTopics: string[]): string[] {
+    const textLower = text.toLowerCase();
+    return possibleTopics.filter(topic => 
+      textLower.includes(topic.toLowerCase())
+    );
   }
 
   private async processSentimentData(sentimentDataList: SentimentData[]): Promise<void> {
