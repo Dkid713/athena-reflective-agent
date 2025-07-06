@@ -4,6 +4,8 @@ import { AthenaReflectorService } from './src/athenaReflectorService';
 import { AutonomousExecutionEngine } from './src/AutonomousExecutionEngine';
 import { MemoryGraph } from './src/memory-graph';
 import { SecurityContractEngine } from './src/SecurityContractEngine';
+import { DataFeedEngine } from './src/DataFeedEngine';
+import { OutlookSentimentEngine } from './src/OutlookSentimentEngine';
 
 (async () => {
   try {
@@ -37,6 +39,18 @@ import { SecurityContractEngine } from './src/SecurityContractEngine';
       ]
     });
     console.log('✅ [SECURITY] Security Contract Engine initialized');
+
+    // Initialize Data Feed Engine
+    const dataFeedEngine = new DataFeedEngine();
+    dataFeedEngine.setReflector(reflector['reflector']);
+    await dataFeedEngine.startDataIngestion();
+    console.log('✅ [DATA FEEDS] Data Feed Engine activated - monitoring arXiv, PubMed, Google News, and Market Data');
+
+    // Initialize Outlook Sentiment Engine
+    const sentimentEngine = new OutlookSentimentEngine();
+    sentimentEngine.setReflector(reflector['reflector']);
+    await sentimentEngine.startSentimentAnalysis();
+    console.log('✅ [SENTIMENT] Outlook Sentiment Engine activated - analyzing market and social sentimentalized');
 
     // Add some test memory
     const testMemory = new MemoryGraph();
@@ -82,10 +96,19 @@ import { SecurityContractEngine } from './src/SecurityContractEngine';
 
     console.log('✅ [MEMORY] Test memory nodes loaded');
 
-    // Start reflection cycles
+    // Start reflection cycles with enhanced monitoring
     const reflectionInterval = setInterval(async () => {
-      console.log('🔄 [CYCLE] Running reflection cycle...');
+      console.log('🔄 [CYCLE] Running enhanced reflection cycle...');
       await reflector.run();
+      
+      // Log data feed status every 10th cycle
+      if (Date.now() % (10 * 3 * 60 * 1000) < 1000) {
+        const feedStatus = dataFeedEngine.getFeedStatus();
+        const sentimentSummary = sentimentEngine.getSentimentSummary();
+        
+        console.log('📊 [STATUS] Data Feed Status:', feedStatus);
+        console.log('💭 [STATUS] Sentiment Summary:', sentimentSummary);
+      }
     }, 10000);
 
     // Start planning cycles
