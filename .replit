@@ -1,0 +1,4 @@
+modules = ["nodejs-20", "docker", "python-with-prybar-3.10", "zig-0.11", "ruff", "pyright-extended", "web", "typescript-language-server", "swift-5.6", "swift-5.8", "svelte-kit-node-20", "rust-stable", "r-4.2", "r-4.4", "python-3.10", "python-3.12", "python-base-3.12", "python-base-3.13", "python-3.9", "postgresql-17", "php-8.1", "nodejs-18", "nix", "java-graalvm22.3", "hermit-0.38.2", "haskell-ghc9.0", "lua-5.2", "haskell-ghc9.6", "gcloud", "go-1.20", "elixir-1_17", "elixir-1_15", "deno-2", "dart-2.18", "dart-3.5", "cpp-clang14", "c-clang14", "bun-1.0", "bun-1.2", "bun-1.1", "angular-node-20", "dotnet-8.0", "dotnet-7.0"]
+
+[nix]
+channel = "stable-24_05"
