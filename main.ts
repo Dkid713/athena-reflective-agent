@@ -109,16 +109,16 @@ import { OutlookSentimentEngine } from './src/OutlookSentimentEngine';
         console.log('📊 [STATUS] Data Feed Status:', feedStatus);
         console.log('💭 [STATUS] Sentiment Summary:', sentimentSummary);
       }
-    }, 10000);
+    }, 30000); // Reduced from 10s to 30s
 
     // Start planning cycles
     const planningInterval = setInterval(async () => {
       console.log('🛠️ [CYCLE] Running planning cycle...');
       await engine.runPlanningCycle();
-    }, 15000);
+    }, 45000); // Reduced from 15s to 45s
 
     console.log('✅ Athena is now operational and running cycles');
-    console.log('📊 [STATUS] Watching for reflection every 10s, planning every 15s');
+    console.log('📊 [STATUS] Watching for reflection every 30s, planning every 45s');
 
     // Graceful shutdown handlers
     const shutdown = () => {

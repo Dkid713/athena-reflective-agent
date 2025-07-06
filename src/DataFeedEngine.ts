@@ -157,10 +157,24 @@ export class DataFeedEngine {
 
   private async fetchRedditData(): Promise<void> {
     try {
-      const response = await fetch('https://www.reddit.com/r/programming/hot.json?limit=20&raw_json=1', {
-        headers: { 'User-Agent': 'AthenaAgent/1.0' }
+      console.log('📡 [DATA FEED] Fetching from Reddit Programming...');
+      const url = 'https://www.reddit.com/r/programming/hot.json?limit=20&raw_json=1';
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'AthenaAgent/1.0'
+        }
       });
-      const data = await response.json() as any;
+
+      if (!response.ok) {
+        throw new Error(`Reddit API returned ${response.status}: ${response.statusText}`);
+      }
+
+      const text = await response.text();
+      if (text.startsWith('<')) {
+        throw new Error('Reddit returned HTML instead of JSON - API may be blocked');
+      }
+
+      const data = JSON.parse(text);
 
       if (data.data?.children) {
         for (const post of data.data.children) {

@@ -1,10 +1,10 @@
-
 import { AthenaReflector, MemoryNode } from './AthenaReflector';
 
 export class AutonomousExecutionEngine {
   private isBootstrapped = false;
   private reflector?: AthenaReflector;
   private processedActions = new Set<string>();
+  private recentActions: Map<string, number> = new Map();
 
   async bootstrap(): Promise<void> {
     console.log('[ENGINE] Bootstrapping Autonomous Execution Engine...');
@@ -21,7 +21,7 @@ export class AutonomousExecutionEngine {
       console.log('[ENGINE] Engine not bootstrapped, skipping planning cycle');
       return;
     }
-    
+
     console.log('[ENGINE] Running planning cycle...');
 
     if (!this.reflector) {
@@ -31,7 +31,7 @@ export class AutonomousExecutionEngine {
 
     // Phase 2: Get recent reflections and process them for intent-based actions
     const recentReflections = this.reflector.getRecentReflections();
-    
+
     for (const reflection of recentReflections) {
       await this.processReflectionWithIntentMapping(reflection);
     }
@@ -43,10 +43,10 @@ export class AutonomousExecutionEngine {
 
   private async processReflectionWithIntentMapping(reflection: MemoryNode): Promise<void> {
     // Phase 2: Enhanced Intent Scoring + Execution Mapping
-    
+
     if (reflection.tags?.includes('incident')) {
       console.log(`🧭 [PLANNING] Escalating incident → ${reflection.content}`);
-      
+
       // Save intent to memory
       await this.saveIntentToMemory({
         id: `intent-${Date.now()}`,
@@ -72,7 +72,7 @@ export class AutonomousExecutionEngine {
 
     if (reflection.tags?.includes('security')) {
       console.log(`🧭 [PLANNING] Security escalation → ${reflection.content}`);
-      
+
       // Save security intent to memory
       await this.saveIntentToMemory({
         id: `intent-security-${Date.now()}`,
@@ -97,7 +97,7 @@ export class AutonomousExecutionEngine {
 
     if (reflection.tags?.includes('learning')) {
       console.log(`🧭 [PLANNING] Knowledge synthesis → ${reflection.content}`);
-      
+
       // Save learning intent to memory
       await this.saveIntentToMemory({
         id: `intent-learn-${Date.now()}`,
@@ -116,7 +116,7 @@ export class AutonomousExecutionEngine {
 
     if (reflection.tags?.includes('feedback-loop')) {
       console.log(`🧭 [PLANNING] Adaptive optimization → ${reflection.content}`);
-      
+
       // Save adaptation intent to memory
       await this.saveIntentToMemory({
         id: `intent-adapt-${Date.now()}`,
@@ -137,7 +137,7 @@ export class AutonomousExecutionEngine {
   private async analyzeIntentAndPlan(nodes: MemoryNode[]): Promise<void> {
     // Intent scoring based on node patterns
     const intentScores = this.calculateIntentScores(nodes);
-    
+
     if (intentScores.maintenance > 0.7) {
       console.log('🔧 [PLANNING] High maintenance intent detected - scheduling system check');
       await this.scheduleMaintenanceAction();
@@ -160,7 +160,7 @@ export class AutonomousExecutionEngine {
     user_interaction: number;
   } {
     const totalNodes = nodes.length || 1;
-    
+
     const maintenanceNodes = nodes.filter(n => 
       n.content.includes('temperature') || 
       n.content.includes('baseline') || 
@@ -187,24 +187,42 @@ export class AutonomousExecutionEngine {
   }
 
   private async sendWebhookOrLog(payload: any): Promise<void> {
+    const { action, reason } = payload;
     // Create deduplication key based on action and reason
-    const dedupKey = `${payload.action}:${payload.reason}`;
-    
-    if (this.processedActions.has(dedupKey)) {
-      console.log(`🔄 [DEDUP] Skipping duplicate action: ${dedupKey}`);
+    const actionKey = `${action}:${reason}`;
+    const now = Date.now();
+    const lastTime = this.recentActions.get(actionKey);
+
+    // Only skip if action was performed in the last 5 minutes
+    if (lastTime && (now - lastTime) < 5 * 60 * 1000) {
+      console.log('🔄 [DEDUP] Skipping duplicate action:', actionKey);
       return;
     }
-    
-    this.processedActions.add(dedupKey);
+
+    this.recentActions.set(actionKey, now);
+
+    // Clean up old entries (older than 10 minutes)
+    for (const [key, time] of this.recentActions.entries()) {
+      if (now - time > 10 * 60 * 1000) {
+        this.recentActions.delete(key);
+      }
+    }
+
+    if (this.processedActions.has(actionKey)) {
+      console.log(`🔄 [DEDUP] Skipping duplicate action: ${actionKey}`);
+      return;
+    }
+
+    this.processedActions.add(actionKey);
     console.log(`📡 [ACTION] Webhook payload:`, JSON.stringify(payload, null, 2));
-    
+
     // Clean up old actions (keep last 100)
     if (this.processedActions.size > 100) {
       const actionsArray = Array.from(this.processedActions);
       this.processedActions.clear();
       actionsArray.slice(-50).forEach(action => this.processedActions.add(action));
     }
-    
+
     // In a real implementation, this would send to an actual webhook
     // await fetch('https://your-webhook-url.com/notify', { 
     //   method: 'POST', 

@@ -1,4 +1,4 @@
-// Athena Reflective Agent Dashboard
+// Athena Agent Dashboard
 class AthenaGraphVisualizer {
   constructor() {
     this.width = 800;
