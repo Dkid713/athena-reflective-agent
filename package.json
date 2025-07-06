@@ -1,4 +1,3 @@
-
 {
   "name": "athena-reflective-agent",
   "version": "1.0.0",
@@ -10,11 +9,17 @@
     "test": "ts-node test-runner.ts"
   },
   "dependencies": {
-    "typescript": "^5.0.0",
+    "@types/node": "^18.0.0",
+    "reflect-metadata": "^0.2.2",
     "ts-node": "^10.9.0",
-    "@types/node": "^18.0.0"
+    "typescript": "^5.0.0"
   },
-  "keywords": ["ai", "agent", "reflection", "memory"],
+  "keywords": [
+    "ai",
+    "agent",
+    "reflection",
+    "memory"
+  ],
   "author": "Dennis R. Kidwell",
   "license": "CC-BY-SA-4.0"
 }

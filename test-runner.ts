@@ -1,4 +1,5 @@
 
+import 'reflect-metadata';
 import { AthenaReflectorService } from './src/athenaReflectorService';
 import { MemoryGraph } from './src/memory-graph';
 
