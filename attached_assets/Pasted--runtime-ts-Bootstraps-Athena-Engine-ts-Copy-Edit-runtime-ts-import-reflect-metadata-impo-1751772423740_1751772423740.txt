@@ -1,0 +1,103 @@
+✅ runtime.ts — Bootstraps Athena + Engine
+ts
+Copy
+Edit
+// runtime.ts
+import 'reflect-metadata';
+import { AthenaReflectorService } from './src/athenaReflectorService';
+import { AutonomousExecutionEngine } from './src/AutonomousExecutionEngine';
+
+(async () => {
+  console.log('🚀 Athena Runtime Booting...');
+
+  const reflector = new AthenaReflectorService();
+  await reflector.initialize();
+
+  const engine = new AutonomousExecutionEngine();
+  await engine.bootstrap();
+
+  // Reflection loop
+  setInterval(async () => {
+    console.log('[🧠] Reflector tick...');
+    await reflector.run();
+  }, 10000);
+
+  // Planning loop
+  setInterval(async () => {
+    console.log('[🛠️] Autonomous execution tick...');
+    await engine.runPlanningCycle();
+  }, 15000);
+
+  console.log('✅ Athena is now operational');
+})();
+🧪 agent-test-runner.ts — Fake memory, force reflection
+ts
+Copy
+Edit
+// agent-test-runner.ts
+import 'reflect-metadata';
+import { AthenaReflectorService } from './src/athenaReflectorService';
+import { AgentMemoryStore } from './src/persistent-memory';
+import { generateReflectionNode } from './src/reflection';
+
+(async () => {
+  const memory = new AgentMemoryStore();
+  const reflector = new AthenaReflectorService(memory);
+
+  // Inject a test observation
+  const fakeObservation = {
+    id: 'test-event-001',
+    type: 'observation',
+    content: 'Sensor detected anomalous vibration',
+    timestamp: new Date().toISOString(),
+    tags: ['sensor', 'anomaly', 'machine-42']
+  };
+
+  await memory.save(fakeObservation);
+  console.log('🧪 Fake memory inserted');
+
+  // Trigger reflection manually
+  const reflection = await generateReflectionNode(fakeObservation, memory);
+  await memory.save(reflection);
+
+  console.log('🔁 Manual reflection completed');
+})();
+✅ Run it with:
+ts-node agent-test-runner.ts
+
+🧠 Log Enhancements
+Inside athenaReflectorService.ts, improve run() with logs:
+
+ts
+Copy
+Edit
+// Inside AthenaReflectorService.run()
+console.log('📥 Loading memory...');
+const recentMemory = await this.memory.loadRecent();
+
+if (recentMemory.length === 0) {
+  console.log('⚠️ No recent memory to reflect on.');
+  return;
+}
+
+console.log(`🧠 Reflecting on ${recentMemory.length} entries...`);
+const result = await this.reflect(recentMemory);
+
+console.log(`💡 Reflection result: ${result.label || 'N/A'} | Tags: ${result.tags?.join(', ')}`);
+await this.memory.save(result);
+✅ Final Notes
+Athena now runs automatically, processing and reflecting on memory
+
+You can test it manually with agent-test-runner.ts
+
+Logging gives you traceability for what’s happening during reflection
+
+Want me to:
+
+Add a simple web UI to visualize reflections?
+
+Build a /debug/state API route to inspect memory and thoughts?
+
+Generate Jest test cases?
+
+Let’s make sure Athena doesn’t just run — she thrives.
