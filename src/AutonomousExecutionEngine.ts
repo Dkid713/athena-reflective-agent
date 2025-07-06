@@ -28,39 +28,108 @@ export class AutonomousExecutionEngine {
       return;
     }
 
-    // Get recent reflections and analyze them
+    // Phase 2: Get recent reflections and process them for intent-based actions
     const recentReflections = this.reflector.getRecentReflections();
     
     for (const reflection of recentReflections) {
-      await this.processReflectionForActions(reflection);
+      await this.processReflectionWithIntentMapping(reflection);
     }
 
-    // Analyze all memory for patterns
+    // Analyze all memory for patterns and calculate intent scores
     const allNodes = this.reflector.getAllMemoryNodes();
     await this.analyzeIntentAndPlan(allNodes);
   }
 
-  private async processReflectionForActions(reflection: MemoryNode): Promise<void> {
+  private async processReflectionWithIntentMapping(reflection: MemoryNode): Promise<void> {
+    // Phase 2: Enhanced Intent Scoring + Execution Mapping
+    
     if (reflection.tags?.includes('incident')) {
-      console.log(`🚨 [PLANNING] Detected incident -> ${reflection.content}`);
+      console.log(`🧭 [PLANNING] Escalating incident → ${reflection.content}`);
       
+      // Save intent to memory
+      await this.saveIntentToMemory({
+        id: `intent-${Date.now()}`,
+        type: 'retrieved',
+        content: 'Escalate to operations team',
+        createdAt: new Date(),
+        scope: 'local',
+        tags: ['intent', 'escalate', 'incident-response'],
+        confidence: 0.92,
+        links: [reflection.id]
+      });
+
+      // Execute action
+      console.log(`📡 [ACTION] Sending alert to Ops: ${reflection.content}`);
       await this.sendWebhookOrLog({
         action: 'notify-ops',
         reason: reflection.content,
         priority: reflection.tags.includes('resolved') ? 'medium' : 'high',
-        timestamp: reflection.createdAt.toISOString()
+        timestamp: reflection.createdAt.toISOString(),
+        intent_id: `intent-${Date.now()}`
       });
     }
 
     if (reflection.tags?.includes('security')) {
-      console.log(`🔒 [PLANNING] Security event detected -> ${reflection.content}`);
+      console.log(`🧭 [PLANNING] Security escalation → ${reflection.content}`);
       
+      // Save security intent to memory
+      await this.saveIntentToMemory({
+        id: `intent-security-${Date.now()}`,
+        type: 'retrieved',
+        content: 'Initiate security response protocol',
+        createdAt: new Date(),
+        scope: 'local',
+        tags: ['intent', 'security-response', 'threat-mitigation'],
+        confidence: 0.95,
+        links: [reflection.id]
+      });
+
+      console.log(`📡 [ACTION] Executing security protocol: ${reflection.content}`);
       await this.sendWebhookOrLog({
         action: 'security-alert',
         reason: reflection.content,
         priority: 'high',
-        timestamp: reflection.createdAt.toISOString()
+        timestamp: reflection.createdAt.toISOString(),
+        intent_id: `intent-security-${Date.now()}`
       });
+    }
+
+    if (reflection.tags?.includes('learning')) {
+      console.log(`🧭 [PLANNING] Knowledge synthesis → ${reflection.content}`);
+      
+      // Save learning intent to memory
+      await this.saveIntentToMemory({
+        id: `intent-learn-${Date.now()}`,
+        type: 'retrieved',
+        content: 'Update knowledge base with new patterns',
+        createdAt: new Date(),
+        scope: 'local',
+        tags: ['intent', 'knowledge-update', 'pattern-learning'],
+        confidence: 0.88,
+        links: [reflection.id]
+      });
+
+      console.log(`📡 [ACTION] Updating knowledge base: ${reflection.content}`);
+      await this.optimizeKnowledgeBase(reflection);
+    }
+
+    if (reflection.tags?.includes('feedback-loop')) {
+      console.log(`🧭 [PLANNING] Adaptive optimization → ${reflection.content}`);
+      
+      // Save adaptation intent to memory
+      await this.saveIntentToMemory({
+        id: `intent-adapt-${Date.now()}`,
+        type: 'retrieved',
+        content: 'Apply adaptive improvements to system',
+        createdAt: new Date(),
+        scope: 'local',
+        tags: ['intent', 'adaptation', 'continuous-improvement'],
+        confidence: 0.85,
+        links: [reflection.id]
+      });
+
+      console.log(`📡 [ACTION] Applying adaptive improvements: ${reflection.content}`);
+      await this.executeAdaptiveOptimization(reflection);
     }
   }
 
@@ -135,5 +204,48 @@ export class AutonomousExecutionEngine {
 
   private async optimizeUserResponse(): Promise<void> {
     console.log('⚡ [ACTION] Optimized user response action');
+  }
+
+  private async saveIntentToMemory(intentNode: MemoryNode): Promise<void> {
+    if (this.reflector) {
+      this.reflector.storeMemory(intentNode);
+      console.log(`🧠 [MEMORY] Saved intent: ${intentNode.content}`);
+    }
+  }
+
+  private async optimizeKnowledgeBase(reflection: MemoryNode): Promise<void> {
+    console.log(`📚 [ACTION] Knowledge base optimization triggered by: ${reflection.content}`);
+    // Simulate knowledge base update
+    if (this.reflector) {
+      const knowledgeUpdate: MemoryNode = {
+        id: `knowledge-${Date.now()}`,
+        type: 'retrieved',
+        content: `Knowledge updated: Pattern from ${reflection.content} integrated`,
+        createdAt: new Date(),
+        scope: 'global',
+        tags: ['knowledge-base', 'pattern-integration', 'learning-outcome'],
+        confidence: 0.80,
+        links: [reflection.id]
+      };
+      this.reflector.storeMemory(knowledgeUpdate);
+    }
+  }
+
+  private async executeAdaptiveOptimization(reflection: MemoryNode): Promise<void> {
+    console.log(`🔄 [ACTION] Adaptive optimization based on: ${reflection.content}`);
+    // Simulate system optimization
+    if (this.reflector) {
+      const optimizationRecord: MemoryNode = {
+        id: `optimization-${Date.now()}`,
+        type: 'retrieved',
+        content: `System optimization applied based on feedback: ${reflection.content}`,
+        createdAt: new Date(),
+        scope: 'local',
+        tags: ['system-optimization', 'feedback-applied', 'performance-improvement'],
+        confidence: 0.87,
+        links: [reflection.id]
+      };
+      this.reflector.storeMemory(optimizationRecord);
+    }
   }
 }
