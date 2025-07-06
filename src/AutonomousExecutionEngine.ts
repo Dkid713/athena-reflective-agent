@@ -4,6 +4,7 @@ import { AthenaReflector, MemoryNode } from './AthenaReflector';
 export class AutonomousExecutionEngine {
   private isBootstrapped = false;
   private reflector?: AthenaReflector;
+  private processedActions = new Set<string>();
 
   async bootstrap(): Promise<void> {
     console.log('[ENGINE] Bootstrapping Autonomous Execution Engine...');
@@ -186,7 +187,24 @@ export class AutonomousExecutionEngine {
   }
 
   private async sendWebhookOrLog(payload: any): Promise<void> {
+    // Create deduplication key based on action and reason
+    const dedupKey = `${payload.action}:${payload.reason}`;
+    
+    if (this.processedActions.has(dedupKey)) {
+      console.log(`🔄 [DEDUP] Skipping duplicate action: ${dedupKey}`);
+      return;
+    }
+    
+    this.processedActions.add(dedupKey);
     console.log(`📡 [ACTION] Webhook payload:`, JSON.stringify(payload, null, 2));
+    
+    // Clean up old actions (keep last 100)
+    if (this.processedActions.size > 100) {
+      const actionsArray = Array.from(this.processedActions);
+      this.processedActions.clear();
+      actionsArray.slice(-50).forEach(action => this.processedActions.add(action));
+    }
+    
     // In a real implementation, this would send to an actual webhook
     // await fetch('https://your-webhook-url.com/notify', { 
     //   method: 'POST', 
