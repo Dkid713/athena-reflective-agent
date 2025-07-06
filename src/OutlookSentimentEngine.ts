@@ -167,9 +167,10 @@ export class OutlookSentimentEngine {
       const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsUrl)}`;
       
       const response = await fetch(proxyUrl);
-      const data = await response.json();
+      const data = await response.json() as any;
       const xmlText = data.contents;
       
+      const { DOMParser } = await import('xmldom');
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
       const items = xmlDoc.getElementsByTagName('item');

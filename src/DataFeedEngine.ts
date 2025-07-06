@@ -1,5 +1,6 @@
 
 import { AthenaReflector, MemoryNode } from './AthenaReflector';
+import { DOMParser } from 'xmldom';
 
 export interface FeedSource {
   id: string;
@@ -127,7 +128,7 @@ export class DataFeedEngine {
       const response = await fetch(url);
       const xmlText = await response.text();
       
-      // Parse XML response
+      // Parse XML response using Node.js-compatible DOMParser
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
       const entries = xmlDoc.getElementsByTagName('entry');
@@ -169,7 +170,7 @@ export class DataFeedEngine {
       // First, search for PMIDs
       const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(searchTerms)}&retmax=10&retmode=json&sort=pub_date`;
       const searchResponse = await fetch(searchUrl);
-      const searchData = await searchResponse.json();
+      const searchData = await searchResponse.json() as any;
       
       if (searchData.esearchresult?.idlist?.length > 0) {
         const pmids = searchData.esearchresult.idlist.slice(0, 5); // Limit to 5 articles
@@ -179,7 +180,7 @@ export class DataFeedEngine {
         const detailsResponse = await fetch(detailsUrl);
         const xmlText = await detailsResponse.text();
         
-        // Parse XML response
+        // Parse XML response using Node.js-compatible DOMParser
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
         const articles = xmlDoc.getElementsByTagName('PubmedArticle');
@@ -223,10 +224,10 @@ export class DataFeedEngine {
       const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
       
       const response = await fetch(proxyUrl);
-      const data = await response.json();
+      const data = await response.json() as any;
       const xmlText = data.contents;
       
-      // Parse RSS XML
+      // Parse RSS XML using Node.js-compatible DOMParser
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
       const items = xmlDoc.getElementsByTagName('item');
@@ -309,10 +310,10 @@ export class DataFeedEngine {
           const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
           
           const response = await fetch(url);
-          const data = await response.json();
+          const data = await response.json() as any;
           
           if (data['Global Quote']) {
-            const quote = data['Global Quote'];
+            const quote = data['Global Quote'] as any;
             const price = parseFloat(quote['05. price']) || 0;
             const change = parseFloat(quote['09. change']) || 0;
             const changePercent = parseFloat(quote['10. change percent'].replace('%', '')) || 0;
@@ -358,11 +359,11 @@ export class DataFeedEngine {
         try {
           const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
           const response = await fetch(url);
-          const data = await response.json();
+          const data = await response.json() as any;
           
           if (data.chart?.result?.[0]) {
-            const result = data.chart.result[0];
-            const meta = result.meta;
+            const result = data.chart.result[0] as any;
+            const meta = result.meta as any;
             const price = meta.regularMarketPrice || 0;
             const previousClose = meta.previousClose || price;
             const change = price - previousClose;
@@ -462,8 +463,6 @@ export class DataFeedEngine {
     
     return Math.max(0, Math.min(1, sentiment));
   }
-
-  
 
   getLastFetchTime(sourceId: string): Date | undefined {
     return this.lastFetchTimes.get(sourceId);
