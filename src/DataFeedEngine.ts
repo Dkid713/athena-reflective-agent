@@ -157,7 +157,9 @@ export class DataFeedEngine {
 
   private async fetchRedditData(): Promise<void> {
     try {
-      const response = await fetch('https://www.reddit.com/r/programming/hot.json?limit=5');
+      const response = await fetch('https://www.reddit.com/r/programming/hot.json?limit=20&raw_json=1', {
+        headers: { 'User-Agent': 'AthenaAgent/1.0' }
+      });
       const data = await response.json() as any;
 
       if (data.data?.children) {
