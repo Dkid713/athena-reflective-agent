@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { AthenaReflectorService } from './src/athenaReflectorService';
 import { AutonomousExecutionEngine } from './src/AutonomousExecutionEngine';
 import { MemoryGraph } from './src/memory-graph';
+import { SecurityContractEngine } from './src/SecurityContractEngine';
 
 (async () => {
   try {
@@ -19,6 +20,23 @@ import { MemoryGraph } from './src/memory-graph';
     // Connect the reflector to the engine for intent-based planning
     engine.setReflector(reflector['reflector']);
     console.log('✅ [BOOT] Autonomous Execution Engine activated');
+
+    // Initialize Security Contract Engine
+    const securityEngine = new SecurityContractEngine();
+    securityEngine.addContract({
+      id: 'test-contract-001',
+      scope: ['memory', 'reflection'],
+      permissions: ['read', 'write', 'reflect'],
+      restrictions: ['no-external-share'],
+      redactionRules: [
+        {
+          pattern: /\b\d{4}-\d{4}-\d{4}-\d{4}\b/g,
+          replacement: '[REDACTED-CARD]',
+          severity: 'high'
+        }
+      ]
+    });
+    console.log('✅ [SECURITY] Security Contract Engine initialized');
 
     // Add some test memory
     const testMemory = new MemoryGraph();
@@ -43,53 +61,53 @@ import { MemoryGraph } from './src/memory-graph';
     reflector.addMemory({
       id: 'user-ack',
       type: 'interaction',
-      content: 'User acknowledged temperature alert',
+      content: 'User acknowledged the temperature alert',
       createdAt: new Date(),
       scope: 'local',
-      tags: ['user', 'acknowledgment'],
+      tags: ['user-interaction', 'acknowledged'],
       confidence: 0.90,
       links: ['obs-temp-spike']
     });
 
     reflector.addMemory({
-      id: 'system-baseline',
+      id: 'system-recovery',
       type: 'observation',
-      content: 'System returned to baseline temperature',
+      content: 'Temperature returned to baseline levels',
       createdAt: new Date(),
       scope: 'local',
-      tags: ['temperature', 'baseline', 'recovery'],
-      confidence: 0.85,
+      tags: ['recovery', 'baseline'],
+      confidence: 0.92,
       links: ['user-ack']
     });
 
-    // Inject test memory
-    reflector.graph = testMemory;
-    console.log('🧪 [TEST] Injected test memory nodes for pattern detection');
+    console.log('✅ [MEMORY] Test memory nodes loaded');
 
-    // Run initial reflection
-    await reflector.run();
-
-    // Set up periodic cycles
-    setInterval(async () => {
-      try {
-        console.log('🧠 [LOOP] Triggering Athena reflection cycle...');
-        await reflector.run();
-      } catch (error) {
-        console.error('❌ [ERROR] Reflection cycle failed:', error);
-      }
+    // Start reflection cycles
+    const reflectionInterval = setInterval(async () => {
+      console.log('🔄 [CYCLE] Running reflection cycle...');
+      await reflector.run();
     }, 10000);
 
-    setInterval(async () => {
-      try {
-        console.log('🛠️ [LOOP] Triggering planning cycle...');
-        await engine.runPlanningCycle();
-      } catch (error) {
-        console.error('❌ [ERROR] Planning cycle failed:', error);
-      }
+    // Start planning cycles
+    const planningInterval = setInterval(async () => {
+      console.log('🛠️ [CYCLE] Running planning cycle...');
+      await engine.runPlanningCycle();
     }, 15000);
 
     console.log('✅ Athena is now operational and running cycles');
     console.log('📊 [STATUS] Watching for reflection every 10s, planning every 15s');
+
+    // Graceful shutdown handlers
+    const shutdown = () => {
+      console.log('🛑 [SHUTDOWN] Athena is shutting down gracefully...');
+      clearInterval(reflectionInterval);
+      clearInterval(planningInterval);
+      console.log('✅ [SHUTDOWN] All cycles stopped');
+      process.exit(0);
+    };
+
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
     
   } catch (error) {
     console.error('💥 [FATAL] Athena failed to start:', error);
