@@ -106,5 +106,5 @@ app.get('/api/sentiment-summary', async (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 [WEB] Athena Dashboard running at http://0.0.0.0:${PORT}`);
-  console.log(`📡 [EXTERNAL] Access at: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`);
+  console.log(`📡 [EXTERNAL] Access at: https://${process.env.REPL_SLUG || 'workspace'}.${process.env.REPL_OWNER || 'your-username'}.repl.co`);
 });

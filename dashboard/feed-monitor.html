@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,24 +13,24 @@
             color: white;
             min-height: 100vh;
         }
-        
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 30px;
         }
-        
+
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
-        
+
         .feed-panel {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 12px;
@@ -39,69 +38,69 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         .feed-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
-        
+
         .feed-title {
             font-size: 1.2em;
             font-weight: bold;
         }
-        
+
         .status-indicator {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
-        
+
         .status-active {
             background-color: #4CAF50;
         }
-        
+
         .status-inactive {
             background-color: #f44336;
         }
-        
+
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.5; }
             100% { opacity: 1; }
         }
-        
+
         .feed-stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin-bottom: 15px;
         }
-        
+
         .stat-item {
             text-align: center;
             padding: 10px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
         }
-        
+
         .stat-value {
             font-size: 1.5em;
             font-weight: bold;
             display: block;
         }
-        
+
         .stat-label {
             font-size: 0.8em;
             opacity: 0.8;
         }
-        
+
         .recent-items {
             margin-top: 15px;
         }
-        
+
         .recent-item {
             background: rgba(255, 255, 255, 0.05);
             padding: 10px;
@@ -109,17 +108,17 @@
             border-radius: 6px;
             border-left: 3px solid #4CAF50;
         }
-        
+
         .item-title {
             font-weight: bold;
             margin-bottom: 5px;
         }
-        
+
         .item-meta {
             font-size: 0.8em;
             opacity: 0.7;
         }
-        
+
         .sentiment-panel {
             grid-column: 1 / -1;
             background: rgba(255, 255, 255, 0.1);
@@ -127,17 +126,17 @@
             padding: 20px;
             backdrop-filter: blur(10px);
         }
-        
+
         .sentiment-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
         }
-        
+
         .sentiment-meter {
             text-align: center;
         }
-        
+
         .meter {
             width: 100px;
             height: 100px;
@@ -146,7 +145,7 @@
             position: relative;
             background: conic-gradient(from 0deg, #f44336 0deg 108deg, #ff9800 108deg 180deg, #4CAF50 180deg 360deg);
         }
-        
+
         .meter-inner {
             position: absolute;
             top: 10px;
@@ -160,7 +159,7 @@
             justify-content: center;
             font-weight: bold;
         }
-        
+
         .refresh-btn {
             position: fixed;
             bottom: 30px;
@@ -176,7 +175,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             transition: transform 0.2s;
         }
-        
+
         .refresh-btn:hover {
             transform: scale(1.1);
         }
@@ -188,7 +187,7 @@
             <h1>🌐 Athena Data Feed Monitor</h1>
             <p>Real-time monitoring of academic papers, news, market data, and sentiment analysis</p>
         </div>
-        
+
         <div class="dashboard-grid">
             <!-- arXiv Feed -->
             <div class="feed-panel">
@@ -217,7 +216,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- PubMed Feed -->
             <div class="feed-panel">
                 <div class="feed-header">
@@ -245,7 +244,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Google News Feed -->
             <div class="feed-panel">
                 <div class="feed-header">
@@ -273,7 +272,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Market Data Feed -->
             <div class="feed-panel">
                 <div class="feed-header">
@@ -302,7 +301,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Sentiment Analysis Panel -->
         <div class="sentiment-panel">
             <h2>💭 Outlook Sentiment Analysis</h2>
@@ -334,16 +333,16 @@
             </div>
         </div>
     </div>
-    
+
     <button class="refresh-btn" onclick="refreshData()">🔄</button>
-    
+
     <script>
         async function refreshData() {
             try {
                 // Fetch real feed status
                 const feedResponse = await fetch('/api/feed-status');
                 const feedData = await feedResponse.json();
-                
+
                 // Update counters with real data
                 if (feedData.hackerNews) {
                     document.getElementById('arxiv-count').textContent = feedData.hackerNews.count || '12';
@@ -357,11 +356,11 @@
                 if (feedData.crypto) {
                     document.getElementById('market-updates').textContent = feedData.crypto.count || '24';
                 }
-                
+
                 // Fetch real sentiment data
                 const sentimentResponse = await fetch('/api/sentiment-summary');
                 const sentimentData = await sentimentResponse.json();
-                
+
                 // Update sentiment meters with real values
                 const sentiments = document.querySelectorAll('.meter-inner');
                 if (sentimentData && Object.keys(sentimentData).length > 0) {
@@ -372,7 +371,7 @@
                         }
                     });
                 }
-                
+
                 console.log('Real data refreshed at', new Date().toLocaleTimeString());
             } catch (error) {
                 console.error('Error fetching real data:', error);
@@ -387,10 +386,10 @@
                 console.log('Fallback data refreshed at', new Date().toLocaleTimeString());
             }
         }
-        
+
         // Auto-refresh every 30 seconds
         setInterval(refreshData, 30000);
-        
+
         // Initial load animation
         setTimeout(() => {
             document.querySelector('.container').style.opacity = '1';
