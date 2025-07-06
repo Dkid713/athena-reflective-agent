@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athena Reflective Agent Dashboard</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #graph-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            height: 600px;
+            backdrop-filter: blur(10px);
+        }
+        .status-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .node {
+            cursor: pointer;
+        }
+        .node:hover {
+            stroke: #fff;
+            stroke-width: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Athena Reflective Agent Dashboard</h1>
+        <div id="graph-container"></div>
+        <div class="status-panel">
+            <h3>📊 System Status</h3>
+            <p id="status">Athena is operational and running reflection cycles</p>
+            <p>🔄 Reflection cycles: Every 10s | 🛠️ Planning cycles: Every 15s</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
