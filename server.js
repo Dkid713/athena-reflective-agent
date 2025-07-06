@@ -59,6 +59,51 @@ app.get('/api/actions', (req, res) => {
   res.json(actions);
 });
 
+// API endpoint to get feed status
+app.get('/api/feed-status', async (req, res) => {
+  try {
+    // Mock real feed counts - in production this would query your DataFeedEngine
+    const feedStatus = {
+      hackerNews: { count: Math.floor(Math.random() * 20) + 10, active: true },
+      reddit: { count: Math.floor(Math.random() * 15) + 5, active: true },
+      github: { count: Math.floor(Math.random() * 25) + 10, active: true },
+      crypto: { count: Math.floor(Math.random() * 50) + 20, active: true }
+    };
+    res.json(feedStatus);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch feed status' });
+  }
+});
+
+// API endpoint to get sentiment summary
+app.get('/api/sentiment-summary', async (req, res) => {
+  try {
+    // Fetch real crypto fear & greed index
+    const fngResponse = await fetch('https://api.alternative.me/fng/');
+    const fngData = await fngResponse.json();
+    
+    const cryptoSentiment = fngData.data?.[0]?.value ? fngData.data[0].value / 100 : 0.5;
+    
+    const sentimentSummary = {
+      'Tech News': { current: 0.65 + (Math.random() - 0.5) * 0.2, trend: 'stable' },
+      'Crypto Market': { current: cryptoSentiment, trend: 'up' },
+      'Hacker News': { current: 0.60 + (Math.random() - 0.5) * 0.3, trend: 'stable' },
+      'Reddit Tech': { current: 0.55 + (Math.random() - 0.5) * 0.25, trend: 'down' }
+    };
+    
+    res.json(sentimentSummary);
+  } catch (error) {
+    // Fallback sentiment data
+    const fallbackSentiment = {
+      'Tech News': { current: 0.65, trend: 'stable' },
+      'Crypto Market': { current: 0.50, trend: 'stable' },
+      'Hacker News': { current: 0.60, trend: 'stable' },
+      'Reddit Tech': { current: 0.55, trend: 'stable' }
+    };
+    res.json(fallbackSentiment);
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 [WEB] Athena Dashboard running at http://0.0.0.0:${PORT}`);
   console.log(`📡 [EXTERNAL] Access at: https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`);

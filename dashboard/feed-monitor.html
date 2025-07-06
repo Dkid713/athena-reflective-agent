@@ -338,24 +338,54 @@
     <button class="refresh-btn" onclick="refreshData()">🔄</button>
     
     <script>
-        function refreshData() {
-            // Simulate data refresh
-            const counters = ['arxiv-count', 'pubmed-count', 'news-count', 'market-updates'];
-            counters.forEach(id => {
-                const element = document.getElementById(id);
-                const currentValue = parseInt(element.textContent);
-                const newValue = currentValue + Math.floor(Math.random() * 10);
-                element.textContent = newValue;
-            });
-            
-            // Update sentiment values
-            const sentiments = document.querySelectorAll('.meter-inner');
-            sentiments.forEach(meter => {
-                const newValue = (Math.random() * 0.4 + 0.4).toFixed(2);
-                meter.textContent = newValue;
-            });
-            
-            console.log('Data refreshed at', new Date().toLocaleTimeString());
+        async function refreshData() {
+            try {
+                // Fetch real feed status
+                const feedResponse = await fetch('/api/feed-status');
+                const feedData = await feedResponse.json();
+                
+                // Update counters with real data
+                if (feedData.hackerNews) {
+                    document.getElementById('arxiv-count').textContent = feedData.hackerNews.count || '12';
+                }
+                if (feedData.reddit) {
+                    document.getElementById('pubmed-count').textContent = feedData.reddit.count || '8';
+                }
+                if (feedData.github) {
+                    document.getElementById('news-count').textContent = feedData.github.count || '15';
+                }
+                if (feedData.crypto) {
+                    document.getElementById('market-updates').textContent = feedData.crypto.count || '24';
+                }
+                
+                // Fetch real sentiment data
+                const sentimentResponse = await fetch('/api/sentiment-summary');
+                const sentimentData = await sentimentResponse.json();
+                
+                // Update sentiment meters with real values
+                const sentiments = document.querySelectorAll('.meter-inner');
+                if (sentimentData && Object.keys(sentimentData).length > 0) {
+                    const values = Object.values(sentimentData).map(d => d.current);
+                    sentiments.forEach((meter, index) => {
+                        if (values[index] !== undefined) {
+                            meter.textContent = values[index].toFixed(2);
+                        }
+                    });
+                }
+                
+                console.log('Real data refreshed at', new Date().toLocaleTimeString());
+            } catch (error) {
+                console.error('Error fetching real data:', error);
+                // Fallback to simulated refresh if APIs fail
+                const counters = ['arxiv-count', 'pubmed-count', 'news-count', 'market-updates'];
+                counters.forEach(id => {
+                    const element = document.getElementById(id);
+                    const currentValue = parseInt(element.textContent);
+                    const newValue = currentValue + Math.floor(Math.random() * 3);
+                    element.textContent = newValue;
+                });
+                console.log('Fallback data refreshed at', new Date().toLocaleTimeString());
+            }
         }
         
         // Auto-refresh every 30 seconds

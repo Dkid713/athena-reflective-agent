@@ -1,6 +1,4 @@
-
 import { AthenaReflector, MemoryNode } from './AthenaReflector';
-import { DOMParser } from 'xmldom';
 
 export interface FeedSource {
   id: string;
@@ -37,31 +35,31 @@ export class DataFeedEngine {
   private initializeFeedSources(): void {
     const sources: FeedSource[] = [
       {
-        id: 'arxiv',
-        name: 'arXiv Academic Papers',
-        type: 'academic',
-        url: 'http://export.arxiv.org/api/query',
-        isActive: true
-      },
-      {
-        id: 'pubmed',
-        name: 'PubMed Medical Research',
-        type: 'academic', 
-        url: 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi',
-        isActive: true
-      },
-      {
-        id: 'google_news',
-        name: 'Google News',
+        id: 'hacker_news',
+        name: 'Hacker News',
         type: 'news',
-        url: 'https://news.google.com/rss',
+        url: 'https://hacker-news.firebaseio.com/v0',
         isActive: true
       },
       {
-        id: 'market_data',
-        name: 'Market Data Feed',
+        id: 'reddit_programming',
+        name: 'Reddit Programming',
+        type: 'news',
+        url: 'https://www.reddit.com/r/programming.json',
+        isActive: true
+      },
+      {
+        id: 'github_trending',
+        name: 'GitHub Trending',
+        type: 'academic',
+        url: 'https://api.github.com/search/repositories',
+        isActive: true
+      },
+      {
+        id: 'crypto_prices',
+        name: 'Cryptocurrency Data',
         type: 'market',
-        url: 'https://api.marketdata.app/v1',
+        url: 'https://api.coingecko.com/api/v3',
         isActive: true
       }
     ];
@@ -73,15 +71,15 @@ export class DataFeedEngine {
   }
 
   async startDataIngestion(): Promise<void> {
-    console.log('🌐 [DATA FEED] Starting continuous data ingestion...');
-    
+    console.log('🌐 [DATA FEED] Starting real data ingestion...');
+
     // Run initial fetch
     await this.fetchAllFeeds();
-    
+
     // Set up periodic fetching
     setInterval(async () => {
       await this.fetchAllFeeds();
-    }, 5 * 60 * 1000); // Every 5 minutes
+    }, 2 * 60 * 1000); // Every 2 minutes
   }
 
   private async fetchAllFeeds(): Promise<void> {
@@ -103,294 +101,159 @@ export class DataFeedEngine {
     console.log(`📡 [DATA FEED] Fetching from ${source.name}...`);
 
     switch (sourceId) {
-      case 'arxiv':
-        await this.fetchArxivData();
+      case 'hacker_news':
+        await this.fetchHackerNewsData();
         break;
-      case 'pubmed':
-        await this.fetchPubMedData();
+      case 'reddit_programming':
+        await this.fetchRedditData();
         break;
-      case 'google_news':
-        await this.fetchGoogleNewsData();
+      case 'github_trending':
+        await this.fetchGitHubTrendingData();
         break;
-      case 'market_data':
-        await this.fetchMarketData();
+      case 'crypto_prices':
+        await this.fetchCryptoPriceData();
         break;
     }
 
     this.lastFetchTimes.set(sourceId, new Date());
   }
 
-  private async fetchArxivData(): Promise<void> {
-    const query = 'cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL'; // AI, ML, Computational Linguistics
-    const url = `http://export.arxiv.org/api/query?search_query=${query}&max_results=10&sortBy=submittedDate&sortOrder=descending`;
-
+  private async fetchHackerNewsData(): Promise<void> {
     try {
-      const response = await fetch(url);
-      const xmlText = await response.text();
-      
-      // Parse XML response using Node.js-compatible DOMParser
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-      const entries = xmlDoc.getElementsByTagName('entry');
-      
-      for (let i = 0; i < entries.length; i++) {
-        const entry = entries[i];
-        const id = entry.getElementsByTagName('id')[0]?.textContent?.split('/').pop() || `arxiv-${Date.now()}-${i}`;
-        const title = entry.getElementsByTagName('title')[0]?.textContent?.trim() || 'Untitled';
-        const summary = entry.getElementsByTagName('summary')[0]?.textContent?.trim() || '';
-        const authors = Array.from(entry.getElementsByTagName('author')).map(author => 
-          author.getElementsByTagName('name')[0]?.textContent || 'Unknown'
-        );
-        const category = entry.getElementsByTagName('category')[0]?.getAttribute('term') || 'unknown';
-        const link = entry.getElementsByTagName('id')[0]?.textContent || '';
+      // Get top stories
+      const topStoriesResponse = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+      const topStories = await topStoriesResponse.json() as number[];
 
-        await this.processDataPoint({
-          id: `arxiv-${id}`,
-          source: 'arXiv',
-          title: title,
-          content: summary,
-          timestamp: new Date(),
-          relevanceScore: this.calculateRelevanceScore(summary, ['AI', 'machine learning', 'neural network']),
-          metadata: {
-            authors: authors,
-            category: category,
-            url: link
-          }
-        });
-      }
-    } catch (error) {
-      console.error('❌ [ARXIV] Fetch error:', error);
-    }
-  }
+      // Get first 5 stories
+      const storyPromises = topStories.slice(0, 5).map(async (id) => {
+        const storyResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`);
+        return storyResponse.json();
+      });
 
-  private async fetchPubMedData(): Promise<void> {
-    const searchTerms = 'artificial intelligence OR machine learning OR neural networks';
-    
-    try {
-      // First, search for PMIDs
-      const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(searchTerms)}&retmax=10&retmode=json&sort=pub_date`;
-      const searchResponse = await fetch(searchUrl);
-      const searchData = await searchResponse.json() as any;
-      
-      if (searchData.esearchresult?.idlist?.length > 0) {
-        const pmids = searchData.esearchresult.idlist.slice(0, 5); // Limit to 5 articles
-        
-        // Fetch article details
-        const detailsUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${pmids.join(',')}&retmode=xml`;
-        const detailsResponse = await fetch(detailsUrl);
-        const xmlText = await detailsResponse.text();
-        
-        // Parse XML response using Node.js-compatible DOMParser
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-        const articles = xmlDoc.getElementsByTagName('PubmedArticle');
-        
-        for (let i = 0; i < articles.length; i++) {
-          const article = articles[i];
-          const pmid = article.getElementsByTagName('PMID')[0]?.textContent || `pubmed-${Date.now()}-${i}`;
-          const title = article.getElementsByTagName('ArticleTitle')[0]?.textContent || 'Untitled';
-          const abstract = article.getElementsByTagName('AbstractText')[0]?.textContent || 'No abstract available';
-          const journal = article.getElementsByTagName('Title')[0]?.textContent || 'Unknown Journal';
-          const pubDate = article.getElementsByTagName('PubDate')[0];
-          const year = pubDate?.getElementsByTagName('Year')[0]?.textContent || new Date().getFullYear().toString();
+      const stories = await Promise.all(storyPromises);
 
+      for (const story of stories) {
+        if (story && story.title) {
           await this.processDataPoint({
-            id: `pubmed-${pmid}`,
-            source: 'PubMed',
-            title: title,
-            content: abstract,
-            timestamp: new Date(),
-            relevanceScore: this.calculateRelevanceScore(abstract, ['medical AI', 'healthcare', 'diagnosis']),
+            id: `hn-${story.id}`,
+            source: 'Hacker News',
+            title: story.title,
+            content: story.text || story.url || 'No content available',
+            timestamp: new Date(story.time * 1000),
+            relevanceScore: this.calculateRelevanceScore(story.title, ['AI', 'programming', 'technology', 'startup']),
             metadata: {
-              pmid: pmid,
-              journal: journal,
-              publishDate: year
+              url: story.url,
+              score: story.score,
+              comments: story.descendants || 0,
+              author: story.by
             }
           });
         }
       }
     } catch (error) {
-      console.error('❌ [PUBMED] Fetch error:', error);
+      console.error('❌ [HACKER NEWS] Fetch error:', error);
     }
   }
 
-  private async fetchGoogleNewsData(): Promise<void> {
+  private async fetchRedditData(): Promise<void> {
     try {
-      // Using Google News RSS feed for AI/technology topics
-      const rssUrl = 'https://news.google.com/rss/search?q=artificial+intelligence+OR+machine+learning+OR+technology&hl=en&gl=US&ceid=US:en';
-      
-      // Note: Due to CORS restrictions, in production you might need a proxy server
-      // For now, we'll use a CORS proxy service
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
-      
-      const response = await fetch(proxyUrl);
+      const response = await fetch('https://www.reddit.com/r/programming/hot.json?limit=5');
       const data = await response.json() as any;
-      const xmlText = data.contents;
-      
-      // Parse RSS XML using Node.js-compatible DOMParser
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-      const items = xmlDoc.getElementsByTagName('item');
-      
-      for (let i = 0; i < Math.min(items.length, 10); i++) {
-        const item = items[i];
-        const title = item.getElementsByTagName('title')[0]?.textContent || 'Untitled';
-        const description = item.getElementsByTagName('description')[0]?.textContent || '';
-        const link = item.getElementsByTagName('link')[0]?.textContent || '';
-        const pubDate = item.getElementsByTagName('pubDate')[0]?.textContent || '';
-        const source = item.getElementsByTagName('source')[0]?.textContent || 'Google News';
-        
-        // Clean up description (remove HTML tags)
-        const content = description.replace(/<[^>]*>/g, '').trim();
-        const sentiment = this.analyzeSentiment(content);
-        
+
+      if (data.data?.children) {
+        for (const post of data.data.children) {
+          const postData = post.data;
+          if (postData.title) {
+            await this.processDataPoint({
+              id: `reddit-${postData.id}`,
+              source: 'Reddit Programming',
+              title: postData.title,
+              content: postData.selftext || postData.url || 'Link post',
+              timestamp: new Date(postData.created_utc * 1000),
+              relevanceScore: this.calculateRelevanceScore(postData.title, ['programming', 'code', 'developer', 'AI']),
+              metadata: {
+                url: `https://reddit.com${postData.permalink}`,
+                score: postData.score,
+                comments: postData.num_comments,
+                author: postData.author,
+                subreddit: postData.subreddit
+              }
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ [REDDIT] Fetch error:', error);
+    }
+  }
+
+  private async fetchGitHubTrendingData(): Promise<void> {
+    try {
+      const today = new Date();
+      const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const dateString = lastWeek.toISOString().split('T')[0];
+
+      const response = await fetch(
+        `https://api.github.com/search/repositories?q=created:>${dateString}&sort=stars&order=desc&per_page=5`
+      );
+      const data = await response.json() as any;
+
+      if (data.items) {
+        for (const repo of data.items) {
+          await this.processDataPoint({
+            id: `github-${repo.id}`,
+            source: 'GitHub Trending',
+            title: `${repo.full_name}: ${repo.description || 'No description'}`,
+            content: repo.description || 'No description available',
+            timestamp: new Date(repo.created_at),
+            relevanceScore: this.calculateRelevanceScore(
+              `${repo.name} ${repo.description}`, 
+              ['AI', 'machine learning', 'javascript', 'python', 'web']
+            ),
+            metadata: {
+              url: repo.html_url,
+              stars: repo.stargazers_count,
+              language: repo.language,
+              forks: repo.forks_count,
+              owner: repo.owner.login
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ [GITHUB] Fetch error:', error);
+    }
+  }
+
+  private async fetchCryptoPriceData(): Promise<void> {
+    try {
+      const response = await fetch(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true'
+      );
+      const data = await response.json() as any;
+
+      for (const [coinId, priceData] of Object.entries(data)) {
+        const price = (priceData as any).usd;
+        const change24h = (priceData as any).usd_24h_change;
+
         await this.processDataPoint({
-          id: `news-${Date.now()}-${i}`,
-          source: 'Google News',
-          title: title,
-          content: content,
-          timestamp: pubDate ? new Date(pubDate) : new Date(),
-          relevanceScore: this.calculateRelevanceScore(content, ['AI', 'technology', 'innovation']),
-          sentiment: sentiment,
+          id: `crypto-${coinId}-${Date.now()}`,
+          source: 'Cryptocurrency',
+          title: `${coinId.toUpperCase()} Price Update`,
+          content: `${coinId} is trading at $${price.toFixed(2)}, ${change24h > 0 ? 'up' : 'down'} ${Math.abs(change24h).toFixed(2)}% in 24h`,
+          timestamp: new Date(),
+          relevanceScore: Math.min(Math.abs(change24h) / 10, 1.0),
+          sentiment: change24h > 0 ? 0.7 : 0.3,
           metadata: {
-            url: link,
-            source: source,
-            category: 'technology'
+            coin: coinId,
+            price: price,
+            change24h: change24h,
+            symbol: coinId.substring(0, 3).toUpperCase()
           }
         });
       }
     } catch (error) {
-      console.error('❌ [NEWS] Fetch error:', error);
-      // Fallback to a simpler approach if CORS proxy fails
-      await this.fetchNewsWithFallback();
-    }
-  }
-
-  private async fetchNewsWithFallback(): Promise<void> {
-    // Simple fallback with mock realistic data
-    const fallbackData = [
-      {
-        title: 'Latest AI Developments in Tech Industry',
-        content: 'Recent advances in artificial intelligence continue to reshape the technology landscape with new applications emerging across various sectors.',
-        url: 'https://news.example.com/ai-developments',
-        source: 'Tech News'
-      }
-    ];
-    
-    for (const article of fallbackData) {
-      const sentiment = this.analyzeSentiment(article.content);
-      
-      await this.processDataPoint({
-        id: `news-fallback-${Date.now()}`,
-        source: 'Google News',
-        title: article.title,
-        content: article.content,
-        timestamp: new Date(),
-        relevanceScore: this.calculateRelevanceScore(article.content, ['AI', 'technology', 'innovation']),
-        sentiment: sentiment,
-        metadata: {
-          url: article.url,
-          source: article.source,
-          category: 'technology'
-        }
-      });
-    }
-  }
-
-  private async fetchMarketData(): Promise<void> {
-    try {
-      // Using Alpha Vantage free API for basic market data
-      // Note: You'll need to get a free API key from https://www.alphavantage.co/support/#api-key
-      const symbols = ['AAPL', 'GOOGL', 'MSFT', 'NVDA', 'TSLA'];
-      
-      for (const symbol of symbols) {
-        try {
-          // Using free tier of Alpha Vantage (limited requests)
-          const apiKey = process.env.ALPHA_VANTAGE_API_KEY || 'demo'; // Use 'demo' for testing
-          const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
-          
-          const response = await fetch(url);
-          const data = await response.json() as any;
-          
-          if (data['Global Quote']) {
-            const quote = data['Global Quote'] as any;
-            const price = parseFloat(quote['05. price']) || 0;
-            const change = parseFloat(quote['09. change']) || 0;
-            const changePercent = parseFloat(quote['10. change percent'].replace('%', '')) || 0;
-            const volume = parseInt(quote['06. volume']) || 0;
-            
-            await this.processDataPoint({
-              id: `market-${symbol}-${Date.now()}`,
-              source: 'Market Data',
-              title: `${symbol} Market Update`,
-              content: `${symbol} traded at $${price.toFixed(2)}, ${change > 0 ? 'up' : 'down'} ${Math.abs(changePercent).toFixed(2)}%`,
-              timestamp: new Date(),
-              relevanceScore: Math.min(Math.abs(changePercent) / 10, 1.0), // Higher volatility = higher relevance
-              sentiment: change > 0 ? 0.7 : 0.3,
-              metadata: {
-                symbol: symbol,
-                price: price,
-                change: changePercent,
-                volume: volume
-              }
-            });
-          }
-          
-          // Rate limiting - wait between requests to avoid hitting API limits
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-        } catch (symbolError) {
-          console.error(`❌ [MARKET] Error fetching ${symbol}:`, symbolError);
-        }
-      }
-    } catch (error) {
-      console.error('❌ [MARKET] Fetch error:', error);
-      // Fallback to Yahoo Finance alternative
-      await this.fetchMarketDataFallback();
-    }
-  }
-
-  private async fetchMarketDataFallback(): Promise<void> {
-    try {
-      // Alternative using Yahoo Finance API (unofficial)
-      const symbols = ['AAPL', 'GOOGL', 'MSFT'];
-      
-      for (const symbol of symbols) {
-        try {
-          const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-          const response = await fetch(url);
-          const data = await response.json() as any;
-          
-          if (data.chart?.result?.[0]) {
-            const result = data.chart.result[0] as any;
-            const meta = result.meta as any;
-            const price = meta.regularMarketPrice || 0;
-            const previousClose = meta.previousClose || price;
-            const change = price - previousClose;
-            const changePercent = (change / previousClose) * 100;
-            
-            await this.processDataPoint({
-              id: `market-${symbol}-${Date.now()}`,
-              source: 'Market Data',
-              title: `${symbol} Market Update`,
-              content: `${symbol} traded at $${price.toFixed(2)}, ${change > 0 ? 'up' : 'down'} ${Math.abs(changePercent).toFixed(2)}%`,
-              timestamp: new Date(),
-              relevanceScore: Math.min(Math.abs(changePercent) / 10, 1.0),
-              sentiment: change > 0 ? 0.7 : 0.3,
-              metadata: {
-                symbol: symbol,
-                price: price,
-                change: changePercent,
-                volume: meta.regularMarketVolume || 0
-              }
-            });
-          }
-        } catch (symbolError) {
-          console.error(`❌ [MARKET] Fallback error for ${symbol}:`, symbolError);
-        }
-      }
-    } catch (error) {
-      console.error('❌ [MARKET] Fallback fetch error:', error);
+      console.error('❌ [CRYPTO] Fetch error:', error);
     }
   }
 
@@ -426,42 +289,21 @@ export class DataFeedEngine {
 
     // Store in reflector memory
     this.reflector.storeMemory(memoryNode);
-    
+
     console.log(`🧠 [MEMORY] Stored data from ${dataPoint.source}: ${dataPoint.title.substring(0, 50)}...`);
   }
 
   private calculateRelevanceScore(content: string, keywords: string[]): number {
     const contentLower = content.toLowerCase();
     let score = 0;
-    
+
     keywords.forEach(keyword => {
       const keywordLower = keyword.toLowerCase();
       const matches = (contentLower.match(new RegExp(keywordLower, 'g')) || []).length;
-      score += matches * 0.1;
+      score += matches * 0.2;
     });
-    
-    return Math.min(score, 1.0);
-  }
 
-  private analyzeSentiment(text: string): number {
-    // Simple sentiment analysis based on keywords
-    const positiveWords = ['breakthrough', 'innovation', 'success', 'growth', 'improve', 'advance'];
-    const negativeWords = ['crisis', 'decline', 'failure', 'problem', 'risk', 'concern'];
-    
-    const textLower = text.toLowerCase();
-    let sentiment = 0.5; // neutral baseline
-    
-    positiveWords.forEach(word => {
-      const matches = (textLower.match(new RegExp(word, 'g')) || []).length;
-      sentiment += matches * 0.1;
-    });
-    
-    negativeWords.forEach(word => {
-      const matches = (textLower.match(new RegExp(word, 'g')) || []).length;
-      sentiment -= matches * 0.1;
-    });
-    
-    return Math.max(0, Math.min(1, sentiment));
+    return Math.min(score, 1.0);
   }
 
   getLastFetchTime(sourceId: string): Date | undefined {
@@ -470,14 +312,14 @@ export class DataFeedEngine {
 
   getFeedStatus(): { [key: string]: { active: boolean; lastFetch: Date | undefined } } {
     const status: { [key: string]: { active: boolean; lastFetch: Date | undefined } } = {};
-    
+
     for (const [id, source] of this.feedSources) {
       status[id] = {
         active: source.isActive,
         lastFetch: this.lastFetchTimes.get(id)
       };
     }
-    
+
     return status;
   }
 }

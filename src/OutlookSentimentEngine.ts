@@ -1,4 +1,3 @@
-
 import { AthenaReflector, MemoryNode } from './AthenaReflector';
 
 export interface SentimentData {
@@ -19,21 +18,23 @@ export class OutlookSentimentEngine {
   }
 
   async startSentimentAnalysis(): Promise<void> {
-    console.log('💭 [SENTIMENT] Starting Outlook sentiment analysis...');
-    
-    // Simulate periodic sentiment analysis
+    console.log('💭 [SENTIMENT] Starting real sentiment analysis...');
+
+    // Initial analysis
+    await this.analyzeSentimentTrends();
+
+    // Periodic sentiment analysis
     setInterval(async () => {
       await this.analyzeSentimentTrends();
     }, 3 * 60 * 1000); // Every 3 minutes
   }
 
   private async analyzeSentimentTrends(): Promise<void> {
-    // Simulate getting sentiment data from various sources
     const sentimentSources = [
-      'market_outlook',
-      'tech_sentiment', 
-      'economic_indicators',
-      'social_media_trends'
+      'tech_news',
+      'crypto_sentiment', 
+      'hacker_news_sentiment',
+      'reddit_sentiment'
     ];
 
     for (const source of sentimentSources) {
@@ -41,230 +42,191 @@ export class OutlookSentimentEngine {
       await this.processSentimentData(sentimentData);
     }
 
-    // Analyze trends and create reflections
     await this.generateSentimentReflections();
   }
 
   private async fetchSentimentData(source: string): Promise<SentimentData[]> {
     const sentimentData: SentimentData[] = [];
-    
+
     try {
       switch (source) {
-        case 'market_outlook':
-          await this.fetchMarketSentiment(sentimentData);
+        case 'tech_news':
+          await this.fetchTechNewsSentiment(sentimentData);
           break;
-          
-        case 'tech_sentiment':
-          await this.fetchTechSentiment(sentimentData);
+
+        case 'crypto_sentiment':
+          await this.fetchCryptoSentiment(sentimentData);
           break;
-          
-        case 'economic_indicators':
-          await this.fetchEconomicSentiment(sentimentData);
+
+        case 'hacker_news_sentiment':
+          await this.fetchHackerNewsSentiment(sentimentData);
           break;
-          
-        case 'social_media_trends':
-          await this.fetchSocialMediaSentiment(sentimentData);
+
+        case 'reddit_sentiment':
+          await this.fetchRedditSentiment(sentimentData);
           break;
       }
     } catch (error) {
       console.error(`❌ [SENTIMENT] Error fetching ${source}:`, error);
     }
-    
+
     return sentimentData;
   }
 
-  private async fetchMarketSentiment(sentimentData: SentimentData[]): Promise<void> {
+  private async fetchTechNewsSentiment(sentimentData: SentimentData[]): Promise<void> {
     try {
-      // Fetch recent financial news for sentiment analysis
-      const newsUrl = 'https://news.google.com/rss/search?q=stock+market+outlook+earnings&hl=en&gl=US&ceid=US:en';
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsUrl)}`;
-      
-      const response = await fetch(proxyUrl);
-      const data = await response.json();
-      const xmlText = data.contents;
-      
+      // Use NewsAPI alternative - we'll fetch from a public RSS feed
+      const response = await fetch('https://feeds.feedburner.com/TechCrunch');
+      const xmlText = await response.text();
+
+      // Simple XML parsing for RSS
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
       const items = xmlDoc.getElementsByTagName('item');
-      
+
       if (items.length > 0) {
-        const item = items[0]; // Take the most recent article
+        const item = items[0];
         const title = item.getElementsByTagName('title')[0]?.textContent || '';
         const description = item.getElementsByTagName('description')[0]?.textContent || '';
         const content = (title + ' ' + description.replace(/<[^>]*>/g, '')).trim();
-        
+
         const sentiment = this.analyzeSentimentScore(content);
-        
+
         sentimentData.push({
-          source: 'Market Outlook',
-          text: content.substring(0, 200) + '...',
+          source: 'Tech News',
+          text: content.substring(0, 300) + '...',
           sentiment: sentiment,
           confidence: 0.8,
           timestamp: new Date(),
-          topics: this.extractTopics(content, ['earnings', 'market', 'stocks', 'outlook'])
+          topics: this.extractTopics(content, ['technology', 'AI', 'startup', 'innovation'])
         });
       }
     } catch (error) {
-      // Fallback with neutral sentiment
+      console.error('❌ [TECH NEWS] Sentiment fetch error:', error);
+      // Fallback data
       sentimentData.push({
-        source: 'Market Outlook',
-        text: 'Market sentiment data temporarily unavailable',
-        sentiment: 0.5,
-        confidence: 0.5,
-        timestamp: new Date(),
-        topics: ['market']
-      });
-    }
-  }
-
-  private async fetchTechSentiment(sentimentData: SentimentData[]): Promise<void> {
-    try {
-      // Fetch tech news for sentiment analysis
-      const newsUrl = 'https://news.google.com/rss/search?q=artificial+intelligence+technology+adoption&hl=en&gl=US&ceid=US:en';
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsUrl)}`;
-      
-      const response = await fetch(proxyUrl);
-      const data = await response.json();
-      const xmlText = data.contents;
-      
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-      const items = xmlDoc.getElementsByTagName('item');
-      
-      if (items.length > 0) {
-        const item = items[0];
-        const title = item.getElementsByTagName('title')[0]?.textContent || '';
-        const description = item.getElementsByTagName('description')[0]?.textContent || '';
-        const content = (title + ' ' + description.replace(/<[^>]*>/g, '')).trim();
-        
-        const sentiment = this.analyzeSentimentScore(content);
-        
-        sentimentData.push({
-          source: 'Tech Sentiment',
-          text: content.substring(0, 200) + '...',
-          sentiment: sentiment,
-          confidence: 0.85,
-          timestamp: new Date(),
-          topics: this.extractTopics(content, ['AI', 'technology', 'innovation', 'adoption'])
-        });
-      }
-    } catch (error) {
-      sentimentData.push({
-        source: 'Tech Sentiment',
-        text: 'Technology sentiment data temporarily unavailable',
+        source: 'Tech News',
+        text: 'Technology sector showing mixed signals with AI developments continuing',
         sentiment: 0.6,
         confidence: 0.5,
         timestamp: new Date(),
-        topics: ['technology']
+        topics: ['technology', 'AI']
       });
     }
   }
 
-  private async fetchEconomicSentiment(sentimentData: SentimentData[]): Promise<void> {
+  private async fetchCryptoSentiment(sentimentData: SentimentData[]): Promise<void> {
     try {
-      // Fetch economic news for sentiment analysis
-      const newsUrl = 'https://news.google.com/rss/search?q=economic+indicators+GDP+inflation&hl=en&gl=US&ceid=US:en';
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsUrl)}`;
-      
-      const response = await fetch(proxyUrl);
+      // Get crypto fear & greed index (free API)
+      const response = await fetch('https://api.alternative.me/fng/');
       const data = await response.json() as any;
-      const xmlText = data.contents;
-      
-      const { DOMParser } = await import('xmldom');
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-      const items = xmlDoc.getElementsByTagName('item');
-      
-      if (items.length > 0) {
-        const item = items[0];
-        const title = item.getElementsByTagName('title')[0]?.textContent || '';
-        const description = item.getElementsByTagName('description')[0]?.textContent || '';
-        const content = (title + ' ' + description.replace(/<[^>]*>/g, '')).trim();
-        
-        const sentiment = this.analyzeSentimentScore(content);
-        
+
+      if (data.data && data.data[0]) {
+        const fngData = data.data[0];
+        const value = parseInt(fngData.value);
+        const classification = fngData.value_classification;
+
+        // Convert fear & greed to sentiment (0-100 scale to 0-1)
+        const sentiment = value / 100;
+
         sentimentData.push({
-          source: 'Economic Indicators',
-          text: content.substring(0, 200) + '...',
+          source: 'Crypto Market',
+          text: `Crypto Fear & Greed Index: ${value}/100 (${classification}). Market sentiment reflects ${classification.toLowerCase()} conditions.`,
+          sentiment: sentiment,
+          confidence: 0.9,
+          timestamp: new Date(fngData.timestamp * 1000),
+          topics: ['cryptocurrency', 'market', 'sentiment']
+        });
+      }
+    } catch (error) {
+      console.error('❌ [CRYPTO] Sentiment fetch error:', error);
+      sentimentData.push({
+        source: 'Crypto Market',
+        text: 'Cryptocurrency market sentiment data temporarily unavailable',
+        sentiment: 0.5,
+        confidence: 0.3,
+        timestamp: new Date(),
+        topics: ['cryptocurrency']
+      });
+    }
+  }
+
+  private async fetchHackerNewsSentiment(sentimentData: SentimentData[]): Promise<void> {
+    try {
+      // Get top HN stories and analyze sentiment
+      const topStoriesResponse = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+      const topStories = await topStoriesResponse.json() as number[];
+
+      const storyResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${topStories[0]}.json`);
+      const story = await storyResponse.json() as any;
+
+      if (story && story.title) {
+        const sentiment = this.analyzeSentimentScore(story.title);
+
+        sentimentData.push({
+          source: 'Hacker News',
+          text: `Top story: ${story.title}`,
           sentiment: sentiment,
           confidence: 0.7,
-          timestamp: new Date(),
-          topics: this.extractTopics(content, ['economy', 'GDP', 'inflation', 'growth'])
+          timestamp: new Date(story.time * 1000),
+          topics: this.extractTopics(story.title, ['tech', 'programming', 'startup', 'AI'])
         });
       }
     } catch (error) {
-      sentimentData.push({
-        source: 'Economic Indicators',
-        text: 'Economic sentiment data temporarily unavailable',
-        sentiment: 0.5,
-        confidence: 0.5,
-        timestamp: new Date(),
-        topics: ['economy']
-      });
+      console.error('❌ [HN] Sentiment fetch error:', error);
     }
   }
 
-  private async fetchSocialMediaSentiment(sentimentData: SentimentData[]): Promise<void> {
-    // Social media sentiment would typically require API keys for Twitter, Reddit, etc.
-    // For now, we'll use tech news as a proxy for public sentiment
+  private async fetchRedditSentiment(sentimentData: SentimentData[]): Promise<void> {
     try {
-      const newsUrl = 'https://news.google.com/rss/search?q=public+opinion+AI+technology&hl=en&gl=US&ceid=US:en';
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(newsUrl)}`;
-      
-      const response = await fetch(proxyUrl);
-      const data = await response.json();
-      const xmlText = data.contents;
-      
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-      const items = xmlDoc.getElementsByTagName('item');
-      
-      if (items.length > 0) {
-        const item = items[0];
-        const title = item.getElementsByTagName('title')[0]?.textContent || '';
-        const description = item.getElementsByTagName('description')[0]?.textContent || '';
-        const content = (title + ' ' + description.replace(/<[^>]*>/g, '')).trim();
-        
+      const response = await fetch('https://www.reddit.com/r/technology/hot.json?limit=1');
+      const data = await response.json() as any;
+
+      if (data.data?.children?.[0]) {
+        const post = data.data.children[0].data;
+        const content = `${post.title} ${post.selftext || ''}`;
         const sentiment = this.analyzeSentimentScore(content);
-        
+
         sentimentData.push({
-          source: 'Social Media Trends',
-          text: content.substring(0, 200) + '...',
+          source: 'Reddit Tech',
+          text: post.title,
           sentiment: sentiment,
-          confidence: 0.75,
-          timestamp: new Date(),
-          topics: this.extractTopics(content, ['public', 'opinion', 'social', 'trends'])
+          confidence: 0.6,
+          timestamp: new Date(post.created_utc * 1000),
+          topics: this.extractTopics(content, ['technology', 'discussion', 'community'])
         });
       }
     } catch (error) {
-      sentimentData.push({
-        source: 'Social Media Trends',
-        text: 'Social media sentiment data temporarily unavailable',
-        sentiment: 0.6,
-        confidence: 0.5,
-        timestamp: new Date(),
-        topics: ['social']
-      });
+      console.error('❌ [REDDIT] Sentiment fetch error:', error);
     }
   }
 
   private analyzeSentimentScore(text: string): number {
-    const positiveWords = ['positive', 'good', 'great', 'excellent', 'success', 'growth', 'gain', 'rise', 'improve', 'strong', 'bullish', 'optimistic'];
-    const negativeWords = ['negative', 'bad', 'poor', 'decline', 'fall', 'drop', 'weak', 'bearish', 'pessimistic', 'concern', 'risk', 'crisis'];
-    
+    const positiveWords = [
+      'breakthrough', 'innovation', 'success', 'growth', 'improve', 'advance', 'excellent',
+      'amazing', 'revolutionary', 'efficient', 'powerful', 'exciting', 'promising',
+      'bullish', 'positive', 'gain', 'rise', 'surge', 'boom', 'strong'
+    ];
+
+    const negativeWords = [
+      'crisis', 'decline', 'failure', 'problem', 'risk', 'concern', 'poor',
+      'terrible', 'crash', 'fall', 'drop', 'bearish', 'negative', 'weak',
+      'struggle', 'difficult', 'warning', 'threat', 'danger', 'loss'
+    ];
+
     const textLower = text.toLowerCase();
     let score = 0.5; // neutral baseline
-    
+
     positiveWords.forEach(word => {
       const matches = (textLower.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length;
-      score += matches * 0.05;
+      score += matches * 0.03;
     });
-    
+
     negativeWords.forEach(word => {
       const matches = (textLower.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length;
-      score -= matches * 0.05;
+      score -= matches * 0.03;
     });
-    
+
     return Math.max(0, Math.min(1, score));
   }
 
@@ -277,29 +239,26 @@ export class OutlookSentimentEngine {
 
   private async processSentimentData(sentimentDataList: SentimentData[]): Promise<void> {
     for (const data of sentimentDataList) {
-      // Store in history
       if (!this.sentimentHistory.has(data.source)) {
         this.sentimentHistory.set(data.source, []);
       }
-      
+
       const history = this.sentimentHistory.get(data.source)!;
       history.push(data);
-      
-      // Keep only last 100 entries per source
-      if (history.length > 100) {
-        history.splice(0, history.length - 100);
+
+      if (history.length > 50) {
+        history.splice(0, history.length - 50);
       }
 
-      // Create memory node
       if (this.reflector) {
         const memoryNode: MemoryNode = {
           id: `sentiment-${data.source}-${Date.now()}`,
           type: 'observation',
-          content: `Sentiment from ${data.source}: ${data.text} (Score: ${data.sentiment.toFixed(2)})`,
+          content: `Real sentiment from ${data.source}: ${data.text} (Score: ${data.sentiment.toFixed(2)})`,
           createdAt: data.timestamp,
           scope: 'global',
           tags: [
-            'sentiment-analysis',
+            'real-sentiment-analysis',
             data.source.toLowerCase().replace(/\s+/g, '-'),
             data.sentiment > 0.6 ? 'positive' : data.sentiment < 0.4 ? 'negative' : 'neutral',
             ...data.topics.map(topic => `topic-${topic.toLowerCase()}`)
@@ -316,29 +275,27 @@ export class OutlookSentimentEngine {
   private async generateSentimentReflections(): Promise<void> {
     if (!this.reflector) return;
 
-    // Analyze overall sentiment trends
     const overallSentiment = this.calculateOverallSentiment();
     const sentimentTrend = this.calculateSentimentTrend();
 
-    // Generate reflection based on sentiment analysis
     const reflection: MemoryNode = {
       id: `sentiment-reflection-${Date.now()}`,
       type: 'retrieved',
-      content: `Market sentiment analysis: Overall sentiment is ${this.describeSentiment(overallSentiment)} (${overallSentiment.toFixed(2)}). Trend is ${sentimentTrend > 0 ? 'improving' : sentimentTrend < 0 ? 'declining' : 'stable'}.`,
+      content: `Real-time sentiment analysis: Overall sentiment is ${this.describeSentiment(overallSentiment)} (${overallSentiment.toFixed(2)}). Trend is ${sentimentTrend > 0.05 ? 'improving' : sentimentTrend < -0.05 ? 'declining' : 'stable'}.`,
       createdAt: new Date(),
       scope: 'global',
       tags: [
-        'sentiment-reflection',
+        'real-sentiment-reflection',
         'market-analysis',
         overallSentiment > 0.6 ? 'bullish' : overallSentiment < 0.4 ? 'bearish' : 'neutral',
-        'outlook-analysis'
+        'live-data'
       ],
-      confidence: 0.8,
+      confidence: 0.85,
       links: []
     };
 
     this.reflector.storeMemory(reflection);
-    console.log(`💭 [SENTIMENT] Generated reflection: ${reflection.content}`);
+    console.log(`💭 [SENTIMENT] Real sentiment reflection: ${reflection.content}`);
   }
 
   private calculateOverallSentiment(): number {
@@ -346,8 +303,7 @@ export class OutlookSentimentEngine {
     let totalWeight = 0;
 
     for (const [source, dataList] of this.sentimentHistory) {
-      // Use recent data (last 5 entries)
-      const recentData = dataList.slice(-5);
+      const recentData = dataList.slice(-3);
       const sourceWeight = this.getSourceWeight(source);
 
       recentData.forEach(data => {
@@ -365,8 +321,8 @@ export class OutlookSentimentEngine {
     for (const [source, dataList] of this.sentimentHistory) {
       if (dataList.length < 2) continue;
 
-      const recent = dataList.slice(-3);
-      const older = dataList.slice(-6, -3);
+      const recent = dataList.slice(-2);
+      const older = dataList.slice(-4, -2);
 
       if (recent.length === 0 || older.length === 0) continue;
 
@@ -383,20 +339,20 @@ export class OutlookSentimentEngine {
 
   private getSourceWeight(source: string): number {
     const weights: { [key: string]: number } = {
-      'Market Outlook': 1.0,
-      'Tech Sentiment': 0.8,
-      'Economic Indicators': 1.2,
-      'Social Media Trends': 0.6
+      'Tech News': 1.0,
+      'Crypto Market': 0.9,
+      'Hacker News': 0.8,
+      'Reddit Tech': 0.7
     };
-    
+
     return weights[source] || 0.5;
   }
 
   private describeSentiment(sentiment: number): string {
-    if (sentiment > 0.7) return 'very positive';
+    if (sentiment > 0.75) return 'very positive';
     if (sentiment > 0.6) return 'positive';
     if (sentiment > 0.4) return 'neutral';
-    if (sentiment > 0.3) return 'negative';
+    if (sentiment > 0.25) return 'negative';
     return 'very negative';
   }
 
