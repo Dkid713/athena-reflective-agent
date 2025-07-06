@@ -31,3 +31,7 @@ args = "npm start"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node server.js"
+
+[deployment]
+run = ["sh", "-c", "/nix/store/nw3pgf3cylsywc239ni540wwwj0ql0yv-run-prybar-wrapper/bin/run-prybar $file"]
+deploymentTarget = "gce"
