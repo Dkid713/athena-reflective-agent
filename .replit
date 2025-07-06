@@ -12,12 +12,15 @@ author = 42212850
 mode = "parallel"
 
 [[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm start"
+task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node server.js"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start Athena"
 
 [[workflows.workflow]]
 name = "Start Web Dashboard"
