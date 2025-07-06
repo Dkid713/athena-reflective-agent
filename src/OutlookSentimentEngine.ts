@@ -80,6 +80,7 @@ export class OutlookSentimentEngine {
       const xmlText = await response.text();
 
       // Simple XML parsing for RSS
+      const { DOMParser } = require('xmldom');
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
       const items = xmlDoc.getElementsByTagName('item');
