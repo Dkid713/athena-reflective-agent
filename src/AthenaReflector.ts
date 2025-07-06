@@ -44,4 +44,21 @@ export class AthenaReflector {
     visit(nodeId, 0);
     return chain;
   }
+
+  getAllMemoryContents(): string {
+    return [...this.memory.values()]
+      .map(node => node.content)
+      .join(' ');
+  }
+
+  getRecentReflections(limit = 10): MemoryNode[] {
+    return [...this.memory.values()]
+      .filter(node => node.type === 'retrieved' && node.tags.includes('pattern-detected'))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
+  getAllMemoryNodes(): MemoryNode[] {
+    return [...this.memory.values()];
+  }
 }

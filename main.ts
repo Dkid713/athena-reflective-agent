@@ -15,6 +15,9 @@ import { MemoryGraph } from './src/memory-graph';
 
     const engine = new AutonomousExecutionEngine();
     await engine.bootstrap();
+    
+    // Connect the reflector to the engine for intent-based planning
+    engine.setReflector(reflector['reflector']);
     console.log('✅ [BOOT] Autonomous Execution Engine activated');
 
     // Add some test memory
@@ -25,9 +28,43 @@ import { MemoryGraph } from './src/memory-graph';
       group: 'observation',
     });
 
+    // Add test memory nodes that will trigger pattern detection
+    reflector.addMemory({
+      id: 'obs-temp-spike',
+      type: 'observation',
+      content: 'Temperature spike detected in Zone 3',
+      createdAt: new Date(),
+      scope: 'local',
+      tags: ['temperature', 'zone-3'],
+      confidence: 0.95,
+      links: []
+    });
+
+    reflector.addMemory({
+      id: 'user-ack',
+      type: 'interaction',
+      content: 'User acknowledged temperature alert',
+      createdAt: new Date(),
+      scope: 'local',
+      tags: ['user', 'acknowledgment'],
+      confidence: 0.90,
+      links: ['obs-temp-spike']
+    });
+
+    reflector.addMemory({
+      id: 'system-baseline',
+      type: 'observation',
+      content: 'System returned to baseline temperature',
+      createdAt: new Date(),
+      scope: 'local',
+      tags: ['temperature', 'baseline', 'recovery'],
+      confidence: 0.85,
+      links: ['user-ack']
+    });
+
     // Inject test memory
     reflector.graph = testMemory;
-    console.log('🧪 [TEST] Injected test memory node');
+    console.log('🧪 [TEST] Injected test memory nodes for pattern detection');
 
     // Run initial reflection
     await reflector.run();

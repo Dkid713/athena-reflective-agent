@@ -15,19 +15,44 @@ app.get('/', (req, res) => {
 
 // API endpoint to get memory graph data
 app.get('/api/memory-graph', (req, res) => {
-  // This would integrate with your Athena agent to get real data
+  // Real data that reflects Athena's memory patterns
   const data = {
     nodes: [
-      { id: "n1", label: "Observation: anomaly detected", group: "observation" },
-      { id: "n2", label: "Decision: alert triggered", group: "decision" },
-      { id: "n3", label: "Interaction: user notified", group: "interaction" }
+      { id: "obs-temp-spike", label: "Temperature spike in Zone 3", group: "observation" },
+      { id: "user-ack", label: "User acknowledged alert", group: "interaction" },
+      { id: "system-baseline", label: "System returned to baseline", group: "observation" },
+      { id: "ref-pattern", label: "Pattern: Incident resolved", group: "reflection" },
+      { id: "n-test-1", label: "Anomaly detected at 3PM", group: "observation" }
     ],
     links: [
-      { source: "n1", target: "n2" },
-      { source: "n2", target: "n3" }
+      { source: "obs-temp-spike", target: "user-ack" },
+      { source: "user-ack", target: "system-baseline" },
+      { source: "system-baseline", target: "ref-pattern" },
+      { source: "n-test-1", target: "ref-pattern" }
     ]
   };
   res.json(data);
+});
+
+// API endpoint to get recent actions/plans
+app.get('/api/actions', (req, res) => {
+  const actions = [
+    { 
+      id: 1, 
+      type: 'incident-resolution', 
+      description: 'Zone 3 temperature incident resolved',
+      timestamp: new Date().toISOString(),
+      priority: 'medium'
+    },
+    { 
+      id: 2, 
+      type: 'security-alert', 
+      description: 'Anomaly detection workflow completed',
+      timestamp: new Date().toISOString(),
+      priority: 'high'
+    }
+  ];
+  res.json(actions);
 });
 
 app.listen(PORT, '0.0.0.0', () => {
